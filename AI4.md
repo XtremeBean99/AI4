@@ -27,7 +27,7 @@
      import base64
 
      # Encrypt the message
-     messages = ["Secret Message", "password is coolgamebro dont tell anyone"]
+     messages = ["Mephistopheles", "my password is 1234 but don't tell anyone"]
 
      def broadcast_message():
          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -115,13 +115,7 @@
 
              if stringData == "Secret Message":
                  sendSecret(addr)
-
-     def sendSecret(client_address):
-         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-         server_address = client_address  # Use the address of the client that sent "Secret Message"
-         message = "secret info you win"
-         sock.sendto(message.encode("ascii"), server_address)
-
+     
      if __name__ == "__main__":
          recieveAndSend()
      ```
