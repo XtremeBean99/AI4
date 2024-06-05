@@ -126,93 +126,74 @@
          recieveAndSend()
      ```
 
-## Coversheet and Instructions for the Challenge
+## Challenge Coversheet and Instructions
 
 ### Challenge Coversheet
 
-#### Title: Capturing and Decrypting Encrypted Messages from a Virtual Machine
+#### Title: Capturing and Decrypting Encrypted Broadcast Messages
 
-**Objective**: Participants will use network analysis tools and Python scripting to capture and decrypt encrypted messages broadcasted by a virtual machine.
+**Objective**: Participants are required to capture and decrypt encrypted messages being broadcasted by a virtual machine on a local network.
 
 **Tools Needed**:
-- Virtual Machine (VM) with a Linux-based OS
-- Nmap
-- Wireshark
-- Python 3
-- Basic knowledge of networking and Python programming
+- A configured Virtual Machine (VM) with a Linux-based operating system.
+- Network scanning tools (e.g., Nmap).
+- Network packet capturing tools (e.g., Wireshark).
+- Python 3 for scripting.
+- Basic understanding of networking, packet analysis, and Python programming.
 
-### Instructions for Attempting the Challenge
+### Challenge Instructions
+
+#### Overview:
+You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network. Your task is to capture these messages and decrypt them to reveal their contents.
 
 #### Step 1: Discover the VM's IP Address
 
-1. Use Nmap to scan the network and discover the VM's IP address.
-   ```bash
-   nmap -sn 10.13.37.0/24
-   ```
+1. **Network Scanning**:
+   - Use Nmap or any similar tool to scan your network and identify all active devices. You will need to determine which one is your target VM.
+   - Example command to scan your network:
+     ```bash
+     nmap -sn 10.13.37.0/24
+     ```
 
-#### Step 2: Capture Packets Using Wireshark
+#### Step 2: Capture Network Traffic
 
-1. Install Wireshark on your host machine.
-2. Start a packet capture on the network interface connected to the VM.
-3. Apply the filter to capture UDP packets on port 8000:
-   ```plaintext
-   udp.port == 8000
-   ```
-4. Identify the packets containing the encrypted message and export them for analysis.
+1. **Setting Up Packet Capturing**:
+   - Install and set up Wireshark on your host machine.
+   - Begin capturing packets on the network interface that communicates with the VM. Focus on capturing UDP traffic, as the encrypted messages are being sent over this protocol.
+   - Useful Wireshark filter:
+     ```plaintext
+     udp
+     ```
 
-#### Step 3: Decrypt the Captured Messages
+#### Step 3: Analyze the Traffic
 
-1. Use the provided decryption script to decrypt the captured messages.
+1. **Identify the Encrypted Messages**:
+   - While monitoring the traffic, look for repeated UDP packets that might be the broadcasted encrypted messages.
+   - Take note of any patterns such as packet size, frequency, or specific ports used (e.g., 8000).
 
-   ```python
-   import base64
+#### Step 4: Write a Script to Decrypt the Messages
 
-   def decrypt_message(cipher_text):
-       decoded_bytes = base64.b64decode(cipher_text)
-       decrypted_message = decoded_bytes.decode("ascii")
-       return decrypted_message
+1. **Decryption Hints**:
+   - The messages are encoded and broadcasted in a manner that might require base64 decoding and understanding of simple encryption techniques.
+   - Suggested Python functions:
+     - `socket` for creating network connections.
+     - `base64.b64decode` for decoding the messages.
+     - Look into Python's `socket` library to bind to the broadcasting port and listen for incoming messages.
 
-   if __name__ == "__main__":
-       # Replace 'your-captured-encrypted-message-here' with the actual captured message from Wireshark
-       encrypted_message = b'your-captured-encrypted-message-here'
-       print("Decrypted message:", decrypt_message(encrypted_message))
-   ```
+#### Hints and Tips:
 
-#### Step 4: Use the Packet Capturing and Decryption Script (Alternative Solution)
+- **Python Scripting**:
+  - Use Python’s `socket` library to create a listener on the network that intercepts broadcast messages.
+  - Apply your knowledge of Python's `base64` module to attempt decryption of these messages.
+  
+- **Wireshark Use**:
+  - Capture traffic over the correct network interface and use filters effectively to isolate relevant data.
+  - Pay attention to the details in the packet's data portion which might give you clues for decryption.
 
-1. Run the following Python script to capture and decrypt messages directly from the network.
+- **Testing and Validation**:
+  - Make sure your script is capable of running continuously to capture real-time data.
+  - Validate the results by cross-checking with known information or debugging outputs.
 
-   ```python
-   import socket
-   import base64
+**Goal**: Successfully decrypt the broadcast message and understand the content.
 
-   def recieveAndSend():
-       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-       server_address = ('0.0.0.0', 8000)  # Bind to all interfaces on port 8000
-       sock.bind(server_address)
-       while True:
-           data, addr = sock.recvfrom(1024)  # Buffer size is 1024 bytes
-           stringData = ""
-           try:
-               stringData64 = base64.b64decode(data)
-               stringData = stringData64.decode("ascii")
-           except:
-               stringData = data.decode("ascii")
-
-           print(f"Received encrypted message: {data}")
-           print(f"Decrypted message: {stringData}")
-
-           if stringData == "Secret Message":
-               sendSecret(addr)
-
-   def sendSecret(client_address):
-       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-       server_address = client_address  # Use the address of the client that sent "Secret Message"
-       message = "secret info you win"
-       sock.sendto(message.encode("ascii"), server_address)
-
-   if __name__ == "__main__":
-       recieveAndSend()
-   ```
-
-**Good luck with the challenge!**
+Good luck, and remember to approach the challenge methodically and document your findings as they might help in decrypting the messages!
