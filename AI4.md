@@ -195,5 +195,3 @@ You are provided with a virtual environment where a Linux-based VM is continuous
   - Validate the results by cross-checking with known information or debugging outputs.
 
 **Goal**: Successfully decrypt the broadcast message and understand the content.
-
-Good luck, and remember to approach the challenge methodically and document your findings as they might help in decrypting the messages!
