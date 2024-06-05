@@ -1,243 +1,218 @@
-## Project Plan: Capturing and Decrypting Encrypted Messages from a Virtual Machine
+# Detailed Setup Summary and Solutions for VM Challenge
 
-### Introduction
+## Detailed Setup Summary
 
-This project will guide participants through the process of setting up a virtual machine that broadcasts an encrypted message in a loop. Participants will be required to use network analysis tools like Wireshark to capture these packets and then develop their own Python script to decrypt the message. An additional challenge is included, where participants must first discover the IP address of the virtual machine using network scanning tools like Nmap before they can log on and start capturing packets.
+### Step-by-Step Setup of the Challenge in the VM
 
-### Project Objectives
+1. **Virtual Machine Setup**:
+   - Installed Ubuntu on a virtual machine using VirtualBox.
+   - Configured the VM with a bridged network adapter to ensure it could communicate with other devices on the same network.
 
-1. **Set Up a Virtual Machine (VM):** Create a VM that runs a Python script to broadcast an encrypted message continuously.
-2. **Network Scanning:** Teach participants to use Nmap to find the IP address of the VM.
-3. **Packet Sniffing:** Guide participants on using Wireshark to capture network packets containing the encrypted message.
-4. **Decryption Challenge:** Instruct participants on writing a Python script to decrypt the captured message.
+2. **Installing Necessary Software**:
+   - Installed Python 3 on the VM using the command: `sudo apt-get install python3`.
 
-### Steps to Achieve the Objectives
+3. **Creating the Broadcast Script**:
+   - Initially attempted to copy-paste the script directly into the VM using the terminal, but the paste function was not working.
+   - Overcame this challenge by using SSH to connect to the VM from my host machine. This allowed me to easily transfer the script.
+   - Used the following command to SSH into the VM: `ssh username@10.13.37.161`.
+   - Created the broadcast script using the nano editor:
+     ```sh
+     nano broadcast_message.py
+     ```
+   - Pasted the following broadcast script into `broadcast_message.py`:
 
-#### 1. Setting Up the Virtual Machine
+     ```python
+     import socket
+     import time
+     import base64
 
-1. **Create a VM:**
-   - Use a virtualisation platform such as VirtualBox, VMware, or a cloud service like AWS.
-   - Install a Linux-based OS (e.g., Ubuntu) on the VM.
+     # Encrypt the message
+     messages = ["Secret Message", "password is coolgamebro dont tell anyone"]
 
-2. **Install Necessary Software:**
-   - Python 3
-   - Necessary Python libraries (e.g., `cryptography`, `socket`)
+     def broadcast_message():
+         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+         server_address = ('10.13.37.255', 8000)  # Use broadcasting address and a specific port
+         while True:
+             for message in messages:
+                 messageBytes = message.encode("ascii")
+                 cipher_text = base64.b64encode(messageBytes)
+                 print(f"Broadcasting encrypted message: {cipher_text}")
+                 sock.sendto(cipher_text, server_address)
+                 time.sleep(5)
 
-3. **Develop the Encryption Script:**
-   - Write a Python script that encrypts a message and sends it over the network. Use a simple encryption method such as Caesar cipher, AES, etc.
+     if __name__ == "__main__":
+         broadcast_message()
+     ```
+
+4. **Setting Up the Script to Run on Startup**:
+   - Created a cron job to ensure the script runs on startup:
+     ```sh
+     crontab -e
+     ```
+   - Added the following line to the crontab file:
+     ```sh
+     @reboot /usr/bin/python3 /home/username/broadcast_message.py
+     ```
+
+### Completed Steps Summary
+
+- Set up the VM and installed necessary software.
+- Created and transferred the broadcast script using SSH due to initial difficulties with direct copy-paste.
+- Configured the VM to run the broadcast script on startup using cron jobs.
+
+## Solutions to the Challenge
+
+### Solution 1: Using Wireshark and a Decryption Script
+
+1. **Capturing Packets with Wireshark**:
+   - Installed Wireshark on the host machine.
+   - Started a packet capture on the network interface connected to the VM.
+   - Applied the filter to isolate packets sent to port 8000:
+     ```plaintext
+     udp.port == 8000
+     ```
+   - Identified and exported the captured encrypted message.
+
+2. **Decryption Script**:
+   - Created a Python script to decrypt the captured messages:
+     ```python
+     import base64
+
+     def decrypt_message(cipher_text):
+         decoded_bytes = base64.b64decode(cipher_text)
+         decrypted_message = decoded_bytes.decode("ascii")
+         return decrypted_message
+
+     if __name__ == "__main__":
+         # Replace 'your-captured-encrypted-message-here' with the actual captured message from Wireshark
+         encrypted_message = b'your-captured-encrypted-message-here'
+         print("Decrypted message:", decrypt_message(encrypted_message))
+     ```
+
+### Solution 2: Using a Packet Capturing and Decryption Script
+
+1. **Capturing and Decrypting Packets**:
+   - Created a Python script to capture and decrypt packets directly:
+     ```python
+     import socket
+     import base64
+
+     def recieveAndSend():
+         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+         server_address = ('0.0.0.0', 8000)  # Bind to all interfaces on port 8000
+         sock.bind(server_address)
+         while True:
+             data, addr = sock.recvfrom(1024)  # Buffer size is 1024 bytes
+             stringData = ""
+             try:
+                 stringData64 = base64.b64decode(data)
+                 stringData = stringData64.decode("ascii")
+             except:
+                 stringData = data.decode("ascii")
+
+             print(f"Received encrypted message: {data}")
+             print(f"Decrypted message: {stringData}")
+
+             if stringData == "Secret Message":
+                 sendSecret(addr)
+
+     def sendSecret(client_address):
+         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+         server_address = client_address  # Use the address of the client that sent "Secret Message"
+         message = "secret info you win"
+         sock.sendto(message.encode("ascii"), server_address)
+
+     if __name__ == "__main__":
+         recieveAndSend()
+     ```
+
+## Coversheet and Instructions for the Challenge
+
+### Challenge Coversheet
+
+#### Title: Capturing and Decrypting Encrypted Messages from a Virtual Machine
+
+**Objective**: Participants will use network analysis tools and Python scripting to capture and decrypt encrypted messages broadcasted by a virtual machine.
+
+**Tools Needed**:
+- Virtual Machine (VM) with a Linux-based OS
+- Nmap
+- Wireshark
+- Python 3
+- Basic knowledge of networking and Python programming
+
+### Instructions for Attempting the Challenge
+
+#### Step 1: Discover the VM's IP Address
+
+1. Use Nmap to scan the network and discover the VM's IP address.
+   ```bash
+   nmap -sn 10.13.37.0/24
+   ```
+
+#### Step 2: Capture Packets Using Wireshark
+
+1. Install Wireshark on your host machine.
+2. Start a packet capture on the network interface connected to the VM.
+3. Apply the filter to capture UDP packets on port 8000:
+   ```plaintext
+   udp.port == 8000
+   ```
+4. Identify the packets containing the encrypted message and export them for analysis.
+
+#### Step 3: Decrypt the Captured Messages
+
+1. Use the provided decryption script to decrypt the captured messages.
 
    ```python
-   from cryptography.fernet import Fernet
+   import base64
+
+   def decrypt_message(cipher_text):
+       decoded_bytes = base64.b64decode(cipher_text)
+       decrypted_message = decoded_bytes.decode("ascii")
+       return decrypted_message
+
+   if __name__ == "__main__":
+       # Replace 'your-captured-encrypted-message-here' with the actual captured message from Wireshark
+       encrypted_message = b'your-captured-encrypted-message-here'
+       print("Decrypted message:", decrypt_message(encrypted_message))
+   ```
+
+#### Step 4: Use the Packet Capturing and Decryption Script (Alternative Solution)
+
+1. Run the following Python script to capture and decrypt messages directly from the network.
+
+   ```python
    import socket
+   import base64
 
-   # Generate a key for encryption and decryption
-   key = Fernet.generate_key()
-   cipher_suite = Fernet(key)
+   def recieveAndSend():
+       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+       server_address = ('0.0.0.0', 8000)  # Bind to all interfaces on port 8000
+       sock.bind(server_address)
+       while True:
+           data, addr = sock.recvfrom(1024)  # Buffer size is 1024 bytes
+           stringData = ""
+           try:
+               stringData64 = base64.b64decode(data)
+               stringData = stringData64.decode("ascii")
+           except:
+               stringData = data.decode("ascii")
 
-   # Message to be encrypted
-   message = b"Secret Message"
+           print(f"Received encrypted message: {data}")
+           print(f"Decrypted message: {stringData}")
 
-   # Encrypt the message
-   encrypted_message = cipher_suite.encrypt(message)
+           if stringData == "Secret Message":
+               sendSecret(addr)
 
-   # Set up a socket to broadcast the message
-   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-   s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+   def sendSecret(client_address):
+       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+       server_address = client_address  # Use the address of the client that sent "Secret Message"
+       message = "secret info you win"
+       sock.sendto(message.encode("ascii"), server_address)
 
-   while True:
-   	s.sendto(encrypted_message, ('<broadcast>', 12345))
+   if __name__ == "__main__":
+       recieveAndSend()
    ```
 
-4. **Run the Script:**
-   - Ensure the script runs automatically on VM startup. This can be achieved by adding the script to the startup applications or using a cron job.
-
-#### 2. Network Scanning with Nmap
-
-1. **Hide the VM’s IP Address:**
-   - Configure the VM’s network settings to use a bridged adapter or a host-only adapter to make the IP less predictable.
-
-2. **Nmap Tutorial:**
-   - Provide a tutorial on using Nmap to discover the IP address of devices on the network.
-
-   ```bash
-   nmap -sn 192.168.1.0/24
-   ```
-
-#### 3. Packet Sniffing with Wireshark
-
-1. **Wireshark Installation:**
-   - Guide participants to install Wireshark on their host machine.
-
-2. **Capture Packets:**
-   - Instruct participants to start a packet capture on the network interface connected to the VM.
-
-3. **Filter Packets:**
-   - Use Wireshark filters to isolate the packets containing the encrypted message.
-
-   ```bash
-   udp.port == 12345
-   ```
-
-#### 4. Decryption Challenge
-
-1. **Packet Extraction:**
-   - Teach participants how to export the captured packets from Wireshark for analysis.
-
-2. **Write a Decryption Script:**
-   - Guide participants to write a Python script to decrypt the captured messages. Provide the encryption key used in the VM script.
-
-   ```python
-   from cryptography.fernet import Fernet
-
-   # The encryption key used in the VM
-   key = b'your-encryption-key-here'
-   cipher_suite = Fernet(key)
-
-   # Encrypted message captured from Wireshark
-   encrypted_message = b'encrypted-message-here'
-
-   # Decrypt the message
-   decrypted_message = cipher_suite.decrypt(encrypted_message)
-   print(decrypted_message.decode('utf-8'))
-   ```
-
-### Evaluation and Outcomes
-
-Participants will be evaluated based on their ability to:
-
-1. Discover the IP address of the VM using Nmap.
-2. Capture the encrypted messages using Wireshark.
-3. Develop a Python script to decrypt the captured messages successfully.
-
-By completing this project, participants will gain practical experience in network security, encryption/decryption, and network scanning techniques. This hands-on challenge will solidify their understanding of these crucial cybersecurity concepts.
-
-Sure, here's a detailed plan for your new cybersecurity challenge, which includes setting up a virtual machine broadcasting an encrypted message and requiring participants to use Wireshark and Python for decryption, with the added step of using Nmap to find the machine's IP address.
-
-## Virtual Machine Setup and Challenge Plan
-
-### Objective
-
-Participants will need to:
-1. Use Nmap to discover the IP address of a virtual machine.
-2. Use Wireshark to capture network traffic and identify the encrypted message.
-3. Develop a Python script to decrypt the message.
-
-### Challenge Overview
-
-1. **Setup a Virtual Machine**:
-   - Install a Linux-based VM (e.g., Ubuntu).
-   - Configure the VM with a static IP initially but do not disclose it to the participants.
-   - Ensure the VM is connected to the same network as the participants.
-
-2. **Python Script for Message Broadcasting**:
-   - Create a Python script that continuously sends an encrypted message over the network.
-   - Use symmetric encryption (e.g., Caesar cipher or a more complex method like AES) to encrypt the message.
-
-3. **Network Discovery with Nmap**:
-   - Instruct participants to use Nmap to find the IP address of the VM.
-
-4. **Packet Sniffing with Wireshark**:
-   - Instruct participants to use Wireshark to capture the network traffic and identify the packets containing the encrypted message.
-
-5. **Message Decryption**:
-   - Instruct participants to develop a Python script to decrypt the captured message.
-
-### Detailed Steps
-
-#### 1. Virtual Machine Setup
-
-1. **Install and Configure the VM**:
-	- Install a VM using a platform like VirtualBox or VMware.
-	- Install Ubuntu or any preferred Linux distribution.
-
-2. **Network Configuration**:
-	- Set the network adapter to Bridged mode (or another mode that allows direct network communication with the host network).
-	- Assign a static IP address initially (do not disclose this IP to participants).
-
-3. **Install Necessary Software**:
-	- Install Python and necessary libraries (`sudo apt-get install python3 python3-pip`).
-	- Install OpenSSH Server for remote access (`sudo apt-get install openssh-server`).
-
-#### 2. Python Script for Message Broadcasting
-
-Create a Python script named `broadcast_message.py`:
-
-```python
-import socket
-import time
-from cryptography.fernet import Fernet
-
-# Generate a key and instantiate a Fernet instance (for AES encryption example)
-key = Fernet.generate_key()
-cipher_suite = Fernet(key)
-
-# Encrypt the message
-message = "Secret Message"
-cipher_text = cipher_suite.encrypt(message.encode())
-
-def broadcast_message():
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	server_address = ('<broadcast>', 10000)  # Use broadcasting address and a specific port
-
-	while True:
-    	try:
-        	print(f"Broadcasting encrypted message: {cipher_text}")
-        	sock.sendto(cipher_text, server_address)
-        	time.sleep(5)
-    	except Exception as e:
-        	print(f"Error: {e}")
-    	finally:
-        	sock.close()
-
-if __name__ == "__main__":
-	broadcast_message()
-```
-
-#### 3. Network Discovery with Nmap
-
-Participants need to use Nmap to discover the IP address of the VM.
-
-```bash
-nmap -sP <network-range>
-```
-
-Instruct participants to identify the IP address associated with the VM.
-
-#### 4. Packet Sniffing with Wireshark
-
-Participants will use Wireshark to capture the network traffic and filter for the specific port or protocol used in the broadcast script.
-
-1. **Open Wireshark**.
-2. **Start a capture on the network interface connected to the VM**.
-3. **Filter by the specific port** (e.g., `udp.port == 10000`).
-
-Participants should be able to identify and extract the encrypted message from the captured packets.
-
-#### 5. Message Decryption
-
-Provide instructions for participants to develop a Python script to decrypt the message. For example, if using Fernet (AES encryption):
-
-```python
-from cryptography.fernet import Fernet
-
-# Use the same key used in the broadcast script
-key = b'...'  # Replace with the actual key
-cipher_suite = Fernet(key)
-
-def decrypt_message(cipher_text):
-	plain_text = cipher_suite.decrypt(cipher_text)
-	return plain_text.decode()
-
-if __name__ == "__main__":
-	encrypted_message = b'...'  # Replace with captured encrypted message
-	print("Decrypted message:", decrypt_message(encrypted_message))
-```
-
-### Conclusion
-
-Participants will have successfully:
-1. Discovered the VM's IP using Nmap.
-2. Captured the encrypted message using Wireshark.
-3. Decrypted the message using a Python script.
-
-This challenge will test their skills in network scanning, packet analysis, and Python programming.
+**Good luck with the challenge!**
