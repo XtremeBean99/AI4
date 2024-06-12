@@ -11,7 +11,7 @@
 2. **Installing Necessary Software**:
    - Installed Python 3 on the VM using the command: `sudo apt-get install python3`.
 
-3. **Creating the Broadcast Script**:
+3. **Creating the Broadcasting and Recieving Scripts**:
    - Initially attempted to copy-paste the script directly into the VM using the terminal, but the paste function was not working.
    - Overcame this challenge by using SSH to connect to the VM from my host machine. This allowed me to easily transfer the script.
    - Used the following command to SSH into the VM: `ssh username@10.13.37.161`.
@@ -27,7 +27,8 @@
      import base64
 
      # Encrypt the message
-     messages = ["Mephistopheles", "my password is 1234 but don't tell anyone"]
+     messages = ["Patrick: What's the password","John: My password is coolgamebro dont tell anyone","Patrick: whats the ip and port","John: 10.13.37.161:8000"]
+
 
      def broadcast_message():
          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -42,16 +43,55 @@
 
      if __name__ == "__main__":
          broadcast_message()
-     ```
 
-4. **Setting Up the Script to Run on Startup**:
-   - Created a cron job to ensure the script runs on startup:
+     ```
+   - Created the recieving script using the nano editor:
+     ```sh
+     nano send_recieve.py
+     ```
+   - Pasted the following python script into `send_recieve.py`:
+
+     ```python
+      import socket
+      import base64
+
+
+      def recieveAndSend():
+          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          server_address = ('10.13.37.161', 8000)  # Use broadcasting address and a specific port
+          sock.bind(server_address)
+          while True:
+              data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+              stringData = ""
+              try:
+                  stringData64 = base64.b64decode(data)
+                  stringData = stringData64.decode("ascii")
+              except:
+                  stringData = data.decode("ascii")
+
+              if stringData == "coolgamebro":
+                  sendSecret(addr)
+              print(stringData)
+
+      def sendSecret(addr):
+          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          server_address = (addr, 8000)  # Use broadcasting address and a specific port
+          message = "cbr_CTF(assignment41357321080805508456)"
+          sock.sendto(message.encode("ascii"), server_address)
+      recieveAndSend() 
+      ```
+
+     
+
+4. **Setting Up the Scripts to Run on Startup**:
+   - Created a cron job to ensure the scripts runs on startup:
      ```sh
      crontab -e
      ```
    - Added the following line to the crontab file:
      ```sh
      @reboot /usr/bin/python3 /home/username/broadcast_message.py
+     @reboot /usr/bin/python3 /home/username/send_recieve.py
      ```
 
 ### Completed Steps Summary
@@ -88,37 +128,17 @@
          encrypted_message = b'your-captured-encrypted-message-here'
          print("Decrypted message:", decrypt_message(encrypted_message))
      ```
-
-### Solution 2: Using a Packet Capturing and Decryption Script
-
-1. **Capturing and Decrypting Packets**:
-   - Created a Python script to capture and decrypt packets directly:
+3. **Sending and Recieving**:
+   - Created a Python script to send back the captured password to recieve the final flag:
      ```python
      import socket
-     import base64
-
-     def recieveAndSend():
-         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-         server_address = ('0.0.0.0', 8000)  # Bind to all interfaces on port 8000
-         sock.bind(server_address)
-         while True:
-             data, addr = sock.recvfrom(1024)  # Buffer size is 1024 bytes
-             stringData = ""
-             try:
-                 stringData64 = base64.b64decode(data)
-                 stringData = stringData64.decode("ascii")
-             except:
-                 stringData = data.decode("ascii")
-
-             print(f"Received encrypted message: {data}")
-             print(f"Decrypted message: {stringData}")
-
-             if stringData == "Secret Message":
-                 sendSecret(addr)
-     
-     if __name__ == "__main__":
-         recieveAndSend()
-     ```
+      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      server_address = ('10.13.37.161', 8000)
+      password = "coolgamebro"
+      messageBytes = password.encode("ascii")
+      print(f"Broadcasting encrypted message: {messageBytes}")
+      sock.sendto(messageBytes, server_address)
+      ```
 
 ## Challenge Coversheet and Instructions
 
@@ -138,7 +158,7 @@
 ### Challenge Instructions
 
 #### Overview:
-You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network. Your task is to capture these messages and decrypt them to reveal their contents.
+You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network. Your task is to capture these messages and decrypt them to reveal their contents. You must capture and decrpyt the conversation, then use the information to send a specific phrase to the VM in order to recieve the final flag.
 
 #### Step 1: Discover the VM's IP Address
 
@@ -164,6 +184,14 @@ You are provided with a virtual environment where a Linux-based VM is continuous
 1. **Identify the Encrypted Messages**:
    - While monitoring the traffic, look for repeated UDP packets that might be the broadcasted encrypted messages.
    - Take note of any patterns such as packet size, frequency, or specific ports used (e.g., 8000).
+   - example of base 64 encoded text: 
+   ```plaintext
+   Plaintext: This is base 64
+   Encoded text: VGhpcyBpcyBCYXNlIDY0
+   Plaintext: The bee movie script
+   Encoded text: VGhlIGJlZSBtb3ZpZSBzY3JpcHQ=
+   ```
+  
 
 #### Step 4: Write a Script to Decrypt the Messages
 
@@ -172,6 +200,15 @@ You are provided with a virtual environment where a Linux-based VM is continuous
    - Suggested Python functions:
      - `socket` for creating network connections.
      - `base64.b64decode` for decoding the messages.
+     - Look into Python's `socket` library to bind to the broadcasting port and listen for incoming messages.
+
+#### Step 5: Write a Script to Send Back the Decrypted Password
+
+1. **Scripting Hints**:
+   - The machine will send back the answer to any user that send it the secret password
+   - Suggested Python functions:
+     - `socket` for creating network connections.
+     - `sock.sendto` for sending the messages.
      - Look into Python's `socket` library to bind to the broadcasting port and listen for incoming messages.
 
 #### Hints and Tips:
@@ -188,4 +225,4 @@ You are provided with a virtual environment where a Linux-based VM is continuous
   - Make sure your script is capable of running continuously to capture real-time data.
   - Validate the results by cross-checking with known information or debugging outputs.
 
-**Goal**: Successfully decrypt the broadcast message and understand the content.
+**Goal**: Successfully decrypt the broadcast message, send back the discovered password and caputre the final flag.
