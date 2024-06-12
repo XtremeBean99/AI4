@@ -166,12 +166,12 @@
 
 #### Title: Capturing and Decrypting Encrypted Broadcast Messages
 
-**Objective**: Participants are required to capture and decrypt encrypted messages being broadcasted by a virtual machine on a local network on port '8000'.
+**Objective**: Participants are required to capture and decrypt encrypted messages being broadcasted by a virtual machine on a local network on port `8000`.
 
 ### Challenge Instructions
 
 #### Overview:
-You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network on the port '8000'. Your task is to capture these messages and decrypt them to reveal their contents. You must capture and decrpyt the conversation, then use the information to send a specific phrase to the VM in order to recieve the final flag.
+You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network on the port `8000`. Your task is to capture these messages and decrypt them to reveal their contents. You must capture and decrpyt the conversation, then use the information to send a specific phrase to the VM in order to recieve the final flag.
 
 #### Step 1: Capture Network Traffic
 
