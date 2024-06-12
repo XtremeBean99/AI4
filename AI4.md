@@ -22,27 +22,31 @@
    - Pasted the following broadcast script into `broadcast_message.py`:
 
      ```python
-     import socket
-     import time
-     import base64
+import socket
+import time
+import base64
 
-     # Encrypt the message
-     messages = ["Patrick: What's the password","John: My password is coolgamebro dont tell anyone","Patrick: whats the ip and port","John: 10.13.37.161:8000"]
+# Encrypt the message
+messages = ["Patrick: What's the password", 
+            "John: My password is coolgamebro dont tell anyone", 
+            "Patrick: whats the ip and port", 
+            "John: 10.13.37.161:8000"]
 
+def broadcast_message():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Enable broadcasting mode
+    server_address = ('10.13.37.255', 8000)  # Use broadcasting address for your subnet
+    
+    while True:
+        for message in messages:
+            messageBytes = message.encode("ascii")
+            cipher_text = base64.b64encode(messageBytes)
+            print(f"Broadcasting encrypted message: {cipher_text.decode('ascii')}")
+            sock.sendto(cipher_text, server_address)
+            time.sleep(5)
 
-     def broadcast_message():
-         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-         server_address = ('0.0.0.0', 8000)  # Use broadcasting address and a specific port
-         while True:
-             for message in messages:
-                 messageBytes = message.encode("ascii")
-                 cipher_text = base64.b64encode(messageBytes)
-                 print(f"Broadcasting encrypted message: {cipher_text}")
-                 sock.sendto(cipher_text, server_address)
-                 time.sleep(5)
-
-     if __name__ == "__main__":
-         broadcast_message()
+if __name__ == "__main__":
+    broadcast_message()
 
      ```
    - Created the recieving script using the nano editor:
