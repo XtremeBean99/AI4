@@ -53,35 +53,36 @@
    - Pasted the following python script into `send_recieve.py`:
 
      ```python
-      import socket
-      import base64
+import socket
+import base64
 
+def receiveAndSend():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    server_address = ('10.13.37.161', 8000)  # Use a specific port to listen
+    sock.bind(server_address)
+    while True:
+        data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+        stringData = ""
+        try:
+            stringData64 = base64.b64decode(data)
+            stringData = stringData64.decode("ascii")
+        except:
+            stringData = data.decode("ascii")
 
-      def recieveAndSend():
-          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-          server_address = ('10.13.37.161', 8000)  # Use broadcasting address and a specific port
-          sock.bind(server_address)
-          while True:
-              data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-              stringData = ""
-              try:
-                  stringData64 = base64.b64decode(data)
-                  stringData = stringData64.decode("ascii")
-              except:
-                  stringData = data.decode("ascii")
+        if stringData == "coolgamebro":
+            sendSecret(addr)
+        print(stringData)
 
-              if stringData == "coolgamebro":
-                  sendSecret(addr)
-              print(stringData)
+def sendSecret(addr):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip_address, port = addr  # Unpack the address tuple
+    server_address = (ip_address, port)  # Use the IP address and port from addr
+    message = "cbr_CTF(assignment41357321080805508456)"
+    sock.sendto(message.encode("ascii"), server_address)
 
-      def sendSecret(addr):
-          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-          server_address = (addr, 8000)  # Use broadcasting address and a specific port
-          message = "cbr_CTF(assignment41357321080805508456)"
-          sock.sendto(message.encode("ascii"), server_address)
-      recieveAndSend() 
+receiveAndSend()
+
       ```
 
      
@@ -134,14 +135,29 @@
 3. **Sending and Recieving**:
    - Created a Python script to send back the captured password to recieve the final flag:
      ```python
-     import socket
-      sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-      server_address = ('10.13.37.161', 8000)
-      password = "coolgamebro"
-      messageBytes = password.encode("ascii")
-      print(f"Broadcasting encrypted message: {messageBytes}")
-      sock.sendto(messageBytes, server_address)
+import socket
+
+def send_password():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = ('10.13.37.161', 8000)  # Ensure this matches the IP and port your server is listening on
+    password = "coolgamebro"
+    messageBytes = password.encode("ascii")
+    
+    # Send the password
+    print(f"Sending message: {messageBytes}")
+    sock.sendto(messageBytes, server_address)
+    
+    # Listen for a response
+    sock.settimeout(5)  # Set a timeout for the response
+    try:
+        data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+        print(f"Received response from {addr}: {data.decode('ascii')}")
+    except socket.timeout:
+        print("No response received within the timeout period.")
+
+if __name__ == "__main__":
+    send_password()
+
       ```
 
 ## Challenge Coversheet and Instructions
