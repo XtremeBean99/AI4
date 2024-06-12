@@ -77,6 +77,7 @@
 
       def sendSecret(addr):
           sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
           server_address = (addr, 8000)  # Use broadcasting address and a specific port
           message = "cbr_CTF(assignment41357321080805508456)"
           sock.sendto(message.encode("ascii"), server_address)
