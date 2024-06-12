@@ -59,6 +59,7 @@
 
       def recieveAndSend():
           sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
           server_address = ('10.13.37.161', 8000)  # Use broadcasting address and a specific port
           sock.bind(server_address)
           while True:
@@ -134,6 +135,7 @@
      ```python
      import socket
       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
       server_address = ('10.13.37.161', 8000)
       password = "coolgamebro"
       messageBytes = password.encode("ascii")
@@ -147,30 +149,14 @@
 
 #### Title: Capturing and Decrypting Encrypted Broadcast Messages
 
-**Objective**: Participants are required to capture and decrypt encrypted messages being broadcasted by a virtual machine on a local network.
-
-**Tools Needed**:
-- A configured Virtual Machine (VM) with a Linux-based operating system.
-- Network scanning tools (e.g., Nmap).
-- Network packet capturing tools (e.g., Wireshark).
-- Python 3 for scripting.
-- Basic understanding of networking, packet analysis, and Python programming.
+**Objective**: Participants are required to capture and decrypt encrypted messages being broadcasted by a virtual machine on a local network on port '8000'.
 
 ### Challenge Instructions
 
 #### Overview:
-You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network. Your task is to capture these messages and decrypt them to reveal their contents. You must capture and decrpyt the conversation, then use the information to send a specific phrase to the VM in order to recieve the final flag.
+You are provided with a virtual environment where a Linux-based VM is continuously broadcasting encrypted messages over the network on the port '8000'. Your task is to capture these messages and decrypt them to reveal their contents. You must capture and decrpyt the conversation, then use the information to send a specific phrase to the VM in order to recieve the final flag.
 
-#### Step 1: Discover the VM's IP Address
-
-1. **Network Scanning**:
-   - Use Nmap or any similar tool to scan your network and identify all active devices. You will need to determine which one is your target VM.
-   - Example command to scan your network:
-     ```bash
-     nmap -sn 10.13.37.0/24
-     ```
-
-#### Step 2: Capture Network Traffic
+#### Step 1: Capture Network Traffic
 
 1. **Setting Up Packet Capturing**:
    - Install and set up Wireshark on your host machine.
@@ -180,7 +166,7 @@ You are provided with a virtual environment where a Linux-based VM is continuous
      udp
      ```
 
-#### Step 3: Analyze the Traffic
+#### Step 2: Analyze the Traffic
 
 1. **Identify the Encrypted Messages**:
    - While monitoring the traffic, look for repeated UDP packets that might be the broadcasted encrypted messages.
@@ -194,7 +180,7 @@ You are provided with a virtual environment where a Linux-based VM is continuous
    ```
   
 
-#### Step 4: Write a Script to Decrypt the Messages
+#### Step 3: Write a Script to Decrypt the Messages
 
 1. **Decryption Hints**:
    - The messages are encoded and broadcasted in a manner that might require base64 decoding and understanding of simple encryption techniques.
@@ -203,7 +189,7 @@ You are provided with a virtual environment where a Linux-based VM is continuous
      - `base64.b64decode` for decoding the messages.
      - Look into Python's `socket` library to bind to the broadcasting port and listen for incoming messages.
 
-#### Step 5: Write a Script to Send Back the Decrypted Password
+#### Step 4: Write a Script to Send Back the Decrypted Password
 
 1. **Scripting Hints**:
    - The machine will send back the answer to any user that send it the secret password
